@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import NewsFeed from '@/components/news/NewsFeed';
 import FeaturedNews from '@/components/news/FeaturedNews';
 import NewsCategories from '@/components/news/NewsCategories';
+import NewsSourcesSection from '@/components/news/NewsSourcesSection';
 
 const Index = () => {
   // Get the first article for the featured section
@@ -17,8 +18,8 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>LocalizeNews - Stay informed about your neighborhood</title>
-        <meta name="description" content="Get personalized, location-specific news about your community and the issues that matter to you." />
+        <title>LocalizeNews - News from your local journalists and newspapers</title>
+        <meta name="description" content="Stay informed with news collected directly from local newspapers, journalists and reporters in your community." />
       </Helmet>
       
       <div className="flex flex-col min-h-screen">
@@ -27,12 +28,14 @@ const Index = () => {
         <main className="flex-grow pt-16">
           <FeaturedNews article={featuredArticle} />
           
+          <NewsSourcesSection />
+          
           <NewsCategories />
           
           <NewsFeed 
             articles={latestArticles} 
-            title="Latest News" 
-            description="Stay informed with the latest stories from your area" 
+            title="Latest From Local Sources" 
+            description="Stories gathered from your community's trusted newspapers and journalists" 
           />
         </main>
         

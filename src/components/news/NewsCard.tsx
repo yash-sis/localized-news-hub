@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, MapPin, ArrowRight } from 'lucide-react';
+import { Clock, MapPin, ArrowRight, User, Newspaper } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { mockNewsSources } from '@/data/mockNews';
 
 export interface NewsArticle {
   id: string;
@@ -14,6 +15,7 @@ export interface NewsArticle {
   publishedAt: string;
   location: string;
   source: string;
+  sourceId?: string;
   slug: string;
 }
 
@@ -29,7 +31,7 @@ export function NewsCard({
   className,
 }: NewsCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { title, summary, imageUrl, category, publishedAt, location, slug } = article;
+  const { title, summary, imageUrl, category, publishedAt, location, source, sourceId, slug } = article;
 
   const formattedDate = new Date(publishedAt).toLocaleDateString('en-US', {
     month: 'short',
@@ -39,6 +41,25 @@ export function NewsCard({
   
   const isFeatured = variant === 'featured';
   const isCompact = variant === 'compact';
+  
+  // Find the source details if sourceId is provided
+  const sourceDetails = sourceId ? 
+    mockNewsSources.find(s => s.id === sourceId) : 
+    null;
+  
+  // Choose icon based on source type
+  const getSourceIcon = () => {
+    if (!sourceDetails) return <User className="h-3 w-3 mr-1" />;
+    
+    switch (sourceDetails.type) {
+      case 'newspaper':
+        return <Newspaper className="h-3 w-3 mr-1" />;
+      case 'journalist':
+        return <User className="h-3 w-3 mr-1" />;
+      default:
+        return <User className="h-3 w-3 mr-1" />;
+    }
+  };
   
   return (
     <Link 
@@ -76,6 +97,14 @@ export function NewsCard({
               {category}
             </div>
           </div>
+          
+          {sourceDetails?.verified && (
+            <div className="absolute top-3 right-3">
+              <div className="px-2.5 py-1 text-xs font-medium bg-primary/90 text-primary-foreground rounded-full flex items-center">
+                <span className="mr-1">✓</span> Verified Source
+              </div>
+            </div>
+          )}
         </div>
 
         <CardContent className={cn(
@@ -97,14 +126,22 @@ export function NewsCard({
             )}
           </div>
           
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex flex-col gap-2 text-xs text-muted-foreground">
             <div className="flex items-center">
-              <MapPin className="h-3 w-3 mr-1" />
-              <span>{location}</span>
+              {getSourceIcon()}
+              <span className="font-medium">{source}</span>
+              {sourceDetails?.verified && <span className="ml-1 text-primary">✓</span>}
             </div>
-            <div className="flex items-center">
-              <Clock className="h-3 w-3 mr-1" />
-              <span>{formattedDate}</span>
+            
+            <div className="flex justify-between">
+              <div className="flex items-center">
+                <MapPin className="h-3 w-3 mr-1" />
+                <span>{location}</span>
+              </div>
+              <div className="flex items-center">
+                <Clock className="h-3 w-3 mr-1" />
+                <span>{formattedDate}</span>
+              </div>
             </div>
           </div>
           

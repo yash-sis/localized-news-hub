@@ -1,6 +1,53 @@
 
 import { NewsArticle } from '@/components/news/NewsCard';
 
+export interface NewsSource {
+  id: string;
+  name: string;
+  type: 'newspaper' | 'journalist' | 'independent';
+  location: string;
+  verified: boolean;
+}
+
+// Define our mock news sources
+export const mockNewsSources: NewsSource[] = [
+  {
+    id: 'sf-chronicle',
+    name: 'SF Chronicle',
+    type: 'newspaper',
+    location: 'San Francisco',
+    verified: true
+  },
+  {
+    id: 'bay-guardian',
+    name: 'Bay Guardian',
+    type: 'newspaper',
+    location: 'San Francisco',
+    verified: true
+  },
+  {
+    id: 'maria-chen',
+    name: 'Maria Chen',
+    type: 'journalist',
+    location: 'San Francisco',
+    verified: true
+  },
+  {
+    id: 'david-rodriguez',
+    name: 'David Rodriguez',
+    type: 'journalist',
+    location: 'Oakland',
+    verified: true
+  },
+  {
+    id: 'mission-local',
+    name: 'Mission Local',
+    type: 'independent',
+    location: 'Mission District, SF',
+    verified: true
+  }
+];
+
 export const mockNewsArticles: NewsArticle[] = [
   {
     id: '1',
@@ -11,6 +58,7 @@ export const mockNewsArticles: NewsArticle[] = [
     publishedAt: '2023-09-15T08:00:00Z',
     location: 'San Francisco',
     source: 'SF Chronicle',
+    sourceId: 'sf-chronicle',
     slug: 'city-council-approves-new-downtown-development-project'
   },
   {
@@ -22,6 +70,7 @@ export const mockNewsArticles: NewsArticle[] = [
     publishedAt: '2023-09-14T10:30:00Z',
     location: 'San Francisco',
     source: 'Bay Area Foodie',
+    sourceId: 'maria-chen',
     slug: 'local-restaurant-week-returns-with-special-menus'
   },
   {
@@ -33,6 +82,7 @@ export const mockNewsArticles: NewsArticle[] = [
     publishedAt: '2023-09-13T14:45:00Z',
     location: 'San Francisco',
     source: 'Tech Daily',
+    sourceId: 'mission-local',
     slug: 'tech-company-expands-operations-adding-200-jobs'
   },
   {
@@ -44,6 +94,7 @@ export const mockNewsArticles: NewsArticle[] = [
     publishedAt: '2023-09-12T16:20:00Z',
     location: 'San Francisco',
     source: 'Bay Area Weather Service',
+    sourceId: 'bay-guardian',
     slug: 'weekend-weather-alert-heavy-rain-expected'
   },
   {
@@ -55,6 +106,7 @@ export const mockNewsArticles: NewsArticle[] = [
     publishedAt: '2023-09-11T09:15:00Z',
     location: 'San Francisco',
     source: 'Education Weekly',
+    sourceId: 'david-rodriguez',
     slug: 'local-school-wins-state-science-competition'
   },
   {
@@ -66,6 +118,7 @@ export const mockNewsArticles: NewsArticle[] = [
     publishedAt: '2023-09-10T11:45:00Z',
     location: 'San Francisco',
     source: 'SF Urban Planning',
+    sourceId: 'sf-chronicle',
     slug: 'new-bike-lanes-to-connect-downtown-and-marina-district'
   }
 ];
