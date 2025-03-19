@@ -1,82 +1,56 @@
 
-import { useState } from 'react';
-import { NewsCard, NewsArticle } from '@/components/news/NewsCard';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { NewsArticle, NewsCard } from '@/components/news/NewsCard';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface NewsFeedProps {
   articles: NewsArticle[];
-  title?: string;
+  title: string;
   description?: string;
+  isLoading?: boolean;
 }
 
-export function NewsFeed({ 
-  articles, 
-  title = "Latest News", 
-  description 
-}: NewsFeedProps) {
-  const isMobile = useIsMobile();
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  
-  // Get unique categories from articles
-  const categories = ['All', ...new Set(articles.map(article => article.category))];
-  
-  // Filter articles by active category
-  const filteredArticles = activeCategory && activeCategory !== 'All'
-    ? articles.filter(article => article.category === activeCategory)
-    : articles;
+const NewsSkeletonCard = () => (
+  <div className="space-y-3">
+    <Skeleton className="h-[200px] w-full rounded-lg" />
+    <Skeleton className="h-4 w-3/4" />
+    <Skeleton className="h-3 w-full" />
+    <Skeleton className="h-3 w-full" />
+    <div className="flex justify-between">
+      <Skeleton className="h-3 w-1/4" />
+      <Skeleton className="h-3 w-1/4" />
+    </div>
+  </div>
+);
+
+export function NewsFeed({ articles, title, description, isLoading = false }: NewsFeedProps) {
+  // Generate skeleton cards when loading
+  const skeletonCards = Array(6).fill(0).map((_, i) => (
+    <NewsSkeletonCard key={`skeleton-${i}`} />
+  ));
 
   return (
-    <section className="py-10">
-      {title && (
-        <div className="container mb-8">
-          <h2 className="section-title">{title}</h2>
+    <section className="py-12">
+      <div className="container">
+        <div className="mb-6">
+          <h2 className="text-3xl font-medium mb-2">{title}</h2>
           {description && (
-            <p className="section-description">{description}</p>
+            <p className="text-muted-foreground">{description}</p>
           )}
         </div>
-      )}
-      
-      <div className="container mb-6 overflow-x-auto scrollbar-hide">
-        <div className="flex space-x-2 pb-2">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={activeCategory === category ? "default" : "outline"}
-              onClick={() => setActiveCategory(category === 'All' ? null : category)}
-              className="rounded-full"
-            >
-              {category}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="container">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredArticles.map((article, index) => (
-            <div
-              key={article.id}
-              className={`${index === 0 && !isMobile ? 'md:col-span-2 md:row-span-2' : ''}`}
-            >
-              <NewsCard 
-                article={article} 
-                variant={index === 0 && !isMobile ? 'featured' : 'default'} 
-              />
-            </div>
-          ))}
-        </div>
         
-        {filteredArticles.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-10">
-            <p className="text-muted-foreground">No articles found for this category.</p>
-            <Button 
-              variant="link" 
-              onClick={() => setActiveCategory(null)}
-              className="mt-2"
-            >
-              View all articles
-            </Button>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {skeletonCards}
+          </div>
+        ) : articles.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((article) => (
+              <NewsCard key={article.id} article={article} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">No news articles found for this location.</p>
           </div>
         )}
       </div>

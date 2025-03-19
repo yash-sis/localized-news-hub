@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { mockNewsArticles } from '@/data/mockNews';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import NewsFeed from '@/components/news/NewsFeed';
@@ -9,29 +7,70 @@ import FeaturedNews from '@/components/news/FeaturedNews';
 import NewsCategories from '@/components/news/NewsCategories';
 import NewsSourcesSection from '@/components/news/NewsSourcesSection';
 import LocationSelector from '@/components/news/LocationSelector';
+import { NewsArticle } from '@/components/news/NewsCard';
+import { newsService } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [selectedLocation, setSelectedLocation] = useState('San Francisco, CA');
-  const [filteredArticles, setFilteredArticles] = useState(mockNewsArticles);
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
-  // Filter articles by selected location when it changes
+  // Fetch all articles on initial load
   useEffect(() => {
-    // Extract just the city name for comparison (before the comma if exists)
-    const locationCity = selectedLocation.split(',')[0].trim();
+    const fetchArticles = async () => {
+      try {
+        setIsLoading(true);
+        const data = await newsService.getAll();
+        setArticles(data);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load news articles. Please try again later.',
+          variant: 'destructive',
+        });
+        // Fallback to empty array if API fails
+        setArticles([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Filter articles that match the selected location
-    const articlesForLocation = mockNewsArticles.filter(article => 
-      article.location.includes(locationCity)
-    );
+    fetchArticles();
+  }, [toast]);
+  
+  // Fetch articles by location when selected location changes
+  useEffect(() => {
+    const fetchArticlesByLocation = async () => {
+      try {
+        setIsLoading(true);
+        // Extract just the city name for the API call
+        const locationCity = selectedLocation.split(',')[0].trim();
+        const data = await newsService.getByLocation(locationCity);
+        setArticles(data);
+      } catch (error) {
+        console.error('Error fetching news by location:', error);
+        toast({
+          title: 'Error',
+          description: `Failed to load news for ${selectedLocation}. Please try again.`,
+          variant: 'destructive',
+        });
+        // Keep the current articles if API fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    setFilteredArticles(articlesForLocation.length > 0 ? articlesForLocation : mockNewsArticles);
-  }, [selectedLocation]);
+    fetchArticlesByLocation();
+  }, [selectedLocation, toast]);
   
   // Get the first article for the featured section
-  const featuredArticle = filteredArticles[0];
+  const featuredArticle = articles.length > 0 ? articles[0] : null;
   
   // Get the rest of the articles for the news feed
-  const latestArticles = filteredArticles.slice(1);
+  const latestArticles = articles.length > 0 ? articles.slice(1) : [];
   
   return (
     <>
@@ -54,7 +93,7 @@ const Index = () => {
             </div>
           </div>
           
-          <FeaturedNews article={featuredArticle} />
+          {featuredArticle && <FeaturedNews article={featuredArticle} />}
           
           <NewsSourcesSection />
           
@@ -63,7 +102,8 @@ const Index = () => {
           <NewsFeed 
             articles={latestArticles} 
             title={`Latest From ${selectedLocation}`}
-            description="Stories gathered from your community's trusted newspapers and journalists" 
+            description="Stories gathered from your community's trusted newspapers and journalists"
+            isLoading={isLoading}
           />
         </main>
         

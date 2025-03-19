@@ -1,13 +1,15 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageSquare, Send, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { commentsService } from '@/services/api';
 
 interface Comment {
   id: string;
+  articleId: string;
   username: string;
   content: string;
   timestamp: string;
@@ -23,92 +25,122 @@ interface NewsCommentsProps {
 
 export function NewsComments({ articleId }: NewsCommentsProps) {
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: '1',
-      username: 'JaneDoe',
-      content: 'This is great reporting! I was just at this location yesterday.',
-      timestamp: '2 hours ago',
-      likes: 5,
-      dislikes: 1,
-    },
-    {
-      id: '2',
-      username: 'LocalResident',
-      content: 'I appreciate the balanced coverage on this issue.',
-      timestamp: '5 hours ago',
-      likes: 12,
-      dislikes: 0,
-    }
-  ]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const handleSubmitComment = () => {
-    if (!comment.trim()) return;
-
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      username: 'You',
-      content: comment,
-      timestamp: 'Just now',
-      likes: 0,
-      dislikes: 0,
+  // Fetch comments for this article
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        setIsLoading(true);
+        const data = await commentsService.getByArticleId(articleId);
+        setComments(data);
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load comments. Please try again later.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setComments([newComment, ...comments]);
-    setComment('');
+    fetchComments();
+  }, [articleId, toast]);
 
-    toast({
-      title: "Comment posted",
-      description: "Thank you for your feedback on this article!",
-    });
+  const handleSubmitComment = async () => {
+    if (!comment.trim()) return;
+
+    try {
+      // Using 'You' as the default username - in a real app, this would come from auth
+      const username = 'You';
+      const newComment = await commentsService.addComment(articleId, username, comment);
+      
+      // Add userHasLiked property since it's used in the UI
+      const enhancedComment = { ...newComment, userHasLiked: false, userHasDisliked: false };
+      
+      setComments([enhancedComment, ...comments]);
+      setComment('');
+
+      toast({
+        title: "Comment posted",
+        description: "Thank you for your feedback on this article!",
+      });
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to post your comment. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleLikeComment = (id: string, isLike: boolean) => {
-    setComments(comments.map(comment => {
-      if (comment.id === id) {
-        if (isLike) {
-          // If user already liked, remove like
-          if (comment.userHasLiked) {
-            return { ...comment, likes: comment.likes - 1, userHasLiked: false };
-          }
-          // If user disliked before, remove dislike and add like
-          else if (comment.userHasDisliked) {
-            return {
-              ...comment,
-              likes: comment.likes + 1,
-              dislikes: comment.dislikes - 1,
-              userHasLiked: true,
-              userHasDisliked: false
-            };
-          }
-          // Regular like
-          else {
-            return { ...comment, likes: comment.likes + 1, userHasLiked: true };
-          }
-        } else {
-          // If user already disliked, remove dislike
-          if (comment.userHasDisliked) {
-            return { ...comment, dislikes: comment.dislikes - 1, userHasDisliked: false };
-          }
-          // If user liked before, remove like and add dislike
-          else if (comment.userHasLiked) {
-            return {
-              ...comment,
-              likes: comment.likes - 1,
-              dislikes: comment.dislikes + 1,
-              userHasLiked: false,
-              userHasDisliked: true
-            };
-          }
-          // Regular dislike
-          else {
-            return { ...comment, dislikes: comment.dislikes + 1, userHasDisliked: true };
+  const handleLikeComment = async (id: string, isLike: boolean) => {
+    try {
+      // Call the appropriate API endpoint
+      if (isLike) {
+        await commentsService.likeComment(id);
+      } else {
+        await commentsService.dislikeComment(id);
+      }
+
+      // Update local state for immediate UI feedback
+      setComments(comments.map(comment => {
+        if (comment.id === id) {
+          if (isLike) {
+            // If user already liked, remove like
+            if (comment.userHasLiked) {
+              return { ...comment, likes: comment.likes - 1, userHasLiked: false };
+            }
+            // If user disliked before, remove dislike and add like
+            else if (comment.userHasDisliked) {
+              return {
+                ...comment,
+                likes: comment.likes + 1,
+                dislikes: comment.dislikes - 1,
+                userHasLiked: true,
+                userHasDisliked: false
+              };
+            }
+            // Regular like
+            else {
+              return { ...comment, likes: comment.likes + 1, userHasLiked: true };
+            }
+          } else {
+            // If user already disliked, remove dislike
+            if (comment.userHasDisliked) {
+              return { ...comment, dislikes: comment.dislikes - 1, userHasDisliked: false };
+            }
+            // If user liked before, remove like and add dislike
+            else if (comment.userHasLiked) {
+              return {
+                ...comment,
+                likes: comment.likes - 1,
+                dislikes: comment.dislikes + 1,
+                userHasLiked: false,
+                userHasDisliked: true
+              };
+            }
+            // Regular dislike
+            else {
+              return { ...comment, dislikes: comment.dislikes + 1, userHasDisliked: true };
+            }
           }
         }
-      }
-      return comment;
-    }));
+        return comment;
+      }));
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update the comment. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -143,7 +175,20 @@ export function NewsComments({ articleId }: NewsCommentsProps) {
         </div>
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="text-center py-4">
+          <div className="animate-pulse">Loading comments...</div>
+        </div>
+      )}
+
       {/* Comments list */}
+      {!isLoading && comments.length === 0 && (
+        <div className="text-center py-4 text-muted-foreground">
+          No comments yet. Be the first to share your thoughts!
+        </div>
+      )}
+
       <div className="space-y-4">
         {comments.map((comment) => (
           <div key={comment.id} className="rounded-lg border p-4 space-y-2">
@@ -156,7 +201,9 @@ export function NewsComments({ articleId }: NewsCommentsProps) {
                 </Avatar>
                 <span className="font-medium text-sm">{comment.username}</span>
               </div>
-              <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(comment.timestamp).toLocaleString()}
+              </span>
             </div>
             <p className="text-sm">{comment.content}</p>
             <div className="flex items-center gap-4">
